@@ -60,3 +60,44 @@ def test_fila_falha_quando_duplicada(service):
     service.join_waitlist(10, 3)
     result = service.join_waitlist(10, 3)
     assert result is False
+
+
+def test_liberacao_simples_deve_tornar_sala_disponivel(service):
+    service.book_room(10, 1)
+    result = service.release_room(10, 1)
+    assert result is True
+    assert service.room_repository.is_available(1) is True
+
+
+def test_liberacao_com_fila_deve_manter_sala_indisponivel(service):
+    service.book_room(10, 1)
+    service.join_waitlist(40, 1)
+    service.release_room(10, 1)
+    assert service.room_repository.is_available(1) is False
+
+
+def test_reserva_remove_membro_da_fila(service):
+    service.join_waitlist(10, 3)
+    service.room_repository.mark_available(3)
+    result = service.book_room(10, 3)
+    assert result is True
+    assert service.waitlist_repository.has_waitlist(10, 3) is False
+
+
+
+def test_fluxo_completo_reserva_fila_liberacao_e_nova_reserva(service):
+    result1 = service.book_room(10, 1)
+    assert result1 is True
+
+    result2 = service.join_waitlist(40, 1)
+    assert result2 is True
+
+    result3 = service.release_room(10, 1)
+    assert result3 is True
+    assert service.room_repository.is_available(1) is False
+
+    service.room_repository.mark_available(1)
+
+    result4 = service.book_room(40, 1)
+    assert result4 is True
+    assert service.room_repository.is_available(1) is False
